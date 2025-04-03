@@ -14,7 +14,6 @@ export interface User {
   isVerified: boolean;
 }
 
-// Extended user interface that includes password
 interface UserWithPassword extends User {
   password: string;
 }
@@ -45,7 +44,6 @@ interface SignupData {
   profilePicture?: string;
 }
 
-// Mock user storage
 const USERS_STORAGE_KEY = "auth_site_users";
 const CURRENT_USER_KEY = "auth_site_current_user";
 const VERIFICATION_CODES_KEY = "auth_site_verification_codes";
@@ -53,25 +51,21 @@ const RESET_CODES_KEY = "auth_site_reset_codes";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Fix the component definition to be a proper function component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Initialize EmailJS
   useEffect(() => {
-    emailjs.init("YOUR_PUBLIC_KEY"); // Replace with your EmailJS public key
+    emailjs.init("yTTjmnnJ4jTFsSz9Q");
   }, []);
 
-  // Load user from local storage on initial render
   useEffect(() => {
     const loadUser = () => {
       const storedUser = localStorage.getItem(CURRENT_USER_KEY);
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
-          // Convert string dates back to Date objects
           parsedUser.dateJoined = new Date(parsedUser.dateJoined);
           if (parsedUser.dateOfBirth) {
             parsedUser.dateOfBirth = new Date(parsedUser.dateOfBirth);
@@ -88,45 +82,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadUser();
   }, []);
 
-  // Helper function to get all users
   const getUsers = (): Record<string, UserWithPassword> => {
     const users = localStorage.getItem(USERS_STORAGE_KEY);
     return users ? JSON.parse(users) : {};
   };
 
-  // Helper function to save users
   const saveUsers = (users: Record<string, UserWithPassword>) => {
     localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
   };
 
-  // Helper function to generate a verification code
   const generateVerificationCode = (): string => {
     return Math.floor(100000 + Math.random() * 900000).toString();
   };
 
-  // Helper function to save a verification code
   const saveVerificationCode = (email: string, code: string) => {
     const codes = JSON.parse(localStorage.getItem(VERIFICATION_CODES_KEY) || "{}");
     codes[email] = {
       code,
-      expiresAt: new Date(Date.now() + 30 * 60000).toISOString(), // 30 minutes expiry
+      expiresAt: new Date(Date.now() + 30 * 60000).toISOString(),
     };
     localStorage.setItem(VERIFICATION_CODES_KEY, JSON.stringify(codes));
     return code;
   };
 
-  // Helper function to save a reset code
   const saveResetCode = (email: string, code: string) => {
     const codes = JSON.parse(localStorage.getItem(RESET_CODES_KEY) || "{}");
     codes[email] = {
       code,
-      expiresAt: new Date(Date.now() + 15 * 60000).toISOString(), // 15 minutes expiry
+      expiresAt: new Date(Date.now() + 15 * 60000).toISOString(),
     };
     localStorage.setItem(RESET_CODES_KEY, JSON.stringify(codes));
     return code;
   };
 
-  // Helper function to check if a verification code is valid
   const isValidVerificationCode = (email: string, code: string): boolean => {
     const codes = JSON.parse(localStorage.getItem(VERIFICATION_CODES_KEY) || "{}");
     const storedCode = codes[email];
@@ -139,7 +127,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return storedCode.code === code;
   };
 
-  // Helper function to check if a reset code is valid
   const isValidResetCode = (email: string, code: string): boolean => {
     const codes = JSON.parse(localStorage.getItem(RESET_CODES_KEY) || "{}");
     const storedCode = codes[email];
@@ -152,21 +139,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return storedCode.code === code;
   };
 
-  // Helper function to remove a verification code
   const removeVerificationCode = (email: string) => {
     const codes = JSON.parse(localStorage.getItem(VERIFICATION_CODES_KEY) || "{}");
     delete codes[email];
     localStorage.setItem(VERIFICATION_CODES_KEY, JSON.stringify(codes));
   };
 
-  // Helper function to remove a reset code
   const removeResetCode = (email: string) => {
     const codes = JSON.parse(localStorage.getItem(RESET_CODES_KEY) || "{}");
     delete codes[email];
     localStorage.setItem(RESET_CODES_KEY, JSON.stringify(codes));
   };
 
-  // Helper function to send an email using EmailJS
   const sendEmail = async (to: string, subject: string, message: string) => {
     try {
       const templateParams = {
@@ -178,8 +162,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       
       const response = await emailjs.send(
-        "YOUR_SERVICE_ID", // Replace with your EmailJS service ID
-        "YOUR_TEMPLATE_ID", // Replace with your EmailJS template ID
+        "service_ufixd59", 
+        "template_sfrezue", 
         templateParams
       );
       
@@ -191,7 +175,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Login function
   const login = async (email: string, password: string): Promise<void> => {
     const users = getUsers();
     const foundUser = Object.values(users).find(
@@ -202,7 +185,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("Invalid email or password");
     }
 
-    // In a real app, you would hash and compare passwords
     if (foundUser.password !== password) {
       throw new Error("Invalid email or password");
     }
@@ -211,7 +193,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("Please verify your email before logging in");
     }
 
-    // Remove password from user object before storing in state
     const { password: _, ...userWithoutPassword } = foundUser;
     
     setUser(userWithoutPassword as User);
@@ -223,11 +204,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // Signup function
   const signup = async (userData: SignupData): Promise<void> => {
     const users = getUsers();
     
-    // Check if email already exists
     const emailExists = Object.values(users).some(
       (u) => u.email.toLowerCase() === userData.email.toLowerCase()
     );
@@ -236,7 +215,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("Email already registered");
     }
     
-    // Check if username already exists
     const usernameExists = Object.values(users).some(
       (u) => u.username.toLowerCase() === userData.username.toLowerCase()
     );
@@ -245,7 +223,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("Username already taken");
     }
 
-    // Create a new user
     const newUser: UserWithPassword = {
       id: crypto.randomUUID(),
       email: userData.email,
@@ -256,19 +233,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dateOfBirth: userData.dateOfBirth || null,
       occupation: userData.occupation || null,
       isVerified: false,
-      password: userData.password, // In a real app, this would be hashed
+      password: userData.password,
     };
 
-    // Save the new user
     users[newUser.id] = newUser;
     saveUsers(users);
 
-    // Generate and save verification code
     const verificationCode = generateVerificationCode();
     saveVerificationCode(userData.email, verificationCode);
 
     try {
-      // Send verification email
       await sendEmail(
         userData.email,
         "Verify Your Email - Auth System",
@@ -280,7 +254,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: `A verification code has been sent to ${userData.email}.`,
       });
     } catch (error) {
-      // Fall back to showing code if email fails
       toast({
         title: "Account created",
         description: `A verification code has been sent to ${userData.email}. The code is: ${verificationCode}`,
@@ -289,7 +262,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Verify email function
   const verifyEmail = async (email: string, code: string): Promise<void> => {
     if (!isValidVerificationCode(email, code)) {
       throw new Error("Invalid or expired verification code");
@@ -304,11 +276,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("User not found");
     }
 
-    // Update user verification status
     userToVerify.isVerified = true;
     saveUsers(users);
     
-    // Remove the verification code
     removeVerificationCode(email);
 
     toast({
@@ -317,7 +287,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // Send verification code function
   const sendVerificationCode = async (email: string): Promise<void> => {
     const users = getUsers();
     const userExists = Object.values(users).some(
@@ -328,12 +297,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("Email not registered");
     }
 
-    // Generate and save verification code
     const verificationCode = generateVerificationCode();
     saveVerificationCode(email, verificationCode);
 
     try {
-      // Send verification email
       await sendEmail(
         email,
         "Your Verification Code - Auth System",
@@ -345,7 +312,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: `A verification code has been sent to ${email}.`,
       });
     } catch (error) {
-      // Fall back to showing code if email fails
       toast({
         title: "Verification code sent",
         description: `A verification code has been sent to ${email}. The code is: ${verificationCode}`,
@@ -354,16 +320,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Resend verification code function
   const resendVerificationCode = async (): Promise<void> => {
     if (!user) return;
     
-    // Generate and save verification code
     const verificationCode = generateVerificationCode();
     saveVerificationCode(user.email, verificationCode);
 
     try {
-      // Send verification email
       await sendEmail(
         user.email,
         "Your New Verification Code - Auth System",
@@ -375,7 +338,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: `A new verification code has been sent to ${user.email}.`,
       });
     } catch (error) {
-      // Fall back to showing code if email fails
       toast({
         title: "Verification code resent",
         description: `A new verification code has been sent to ${user.email}. The code is: ${verificationCode}`,
@@ -384,7 +346,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Request password reset function
   const requestPasswordReset = async (email: string): Promise<void> => {
     const users = getUsers();
     const userExists = Object.values(users).some(
@@ -395,12 +356,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("Email not registered");
     }
 
-    // Generate and save reset code
     const resetCode = generateVerificationCode();
     saveResetCode(email, resetCode);
 
     try {
-      // Send reset email
       await sendEmail(
         email,
         "Password Reset Code - Auth System",
@@ -412,7 +371,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: `A password reset code has been sent to ${email}.`,
       });
     } catch (error) {
-      // Fall back to showing code if email fails
       toast({
         title: "Password reset code sent",
         description: `A password reset code has been sent to ${email}. The code is: ${resetCode}`,
@@ -421,7 +379,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Reset password function
   const resetPassword = async (email: string, code: string, newPassword: string): Promise<void> => {
     if (!isValidResetCode(email, code)) {
       throw new Error("Invalid or expired reset code");
@@ -436,11 +393,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("User not found");
     }
 
-    // Update user password
-    userToUpdate.password = newPassword; // In a real app, this would be hashed
+    userToUpdate.password = newPassword;
     saveUsers(users);
     
-    // Remove the reset code
     removeResetCode(email);
 
     toast({
@@ -449,7 +404,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // Update profile function
   const updateProfile = async (data: Partial<User>): Promise<void> => {
     if (!user) {
       throw new Error("Not authenticated");
@@ -462,7 +416,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("User not found");
     }
 
-    // Check if username is being updated and is unique
     if (data.username && data.username !== currentUser.username) {
       const usernameExists = Object.values(users).some(
         (u) => u.id !== user.id && u.username.toLowerCase() === data.username!.toLowerCase()
@@ -473,12 +426,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    // Update user data
     const updatedUser = { ...currentUser, ...data };
     users[user.id] = updatedUser;
     saveUsers(users);
 
-    // Update current user state and local storage
     const { password: _, ...userWithoutPassword } = updatedUser;
     setUser(userWithoutPassword as User);
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userWithoutPassword));
@@ -489,7 +440,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // Delete account function
   const deleteAccount = async (): Promise<void> => {
     if (!user) {
       throw new Error("Not authenticated");
@@ -499,7 +449,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     delete users[user.id];
     saveUsers(users);
 
-    // Clear user state and local storage
     setUser(null);
     localStorage.removeItem(CURRENT_USER_KEY);
 
@@ -509,7 +458,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // Logout function
   const logout = () => {
     setUser(null);
     localStorage.removeItem(CURRENT_USER_KEY);
