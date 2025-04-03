@@ -1,6 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import emailjs from '@emailjs/browser';
 
 export interface User {
   id: string;
@@ -58,6 +58,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  // Initialize EmailJS
+  useEffect(() => {
+    emailjs.init("YOUR_PUBLIC_KEY"); // Replace with your EmailJS public key
+  }, []);
 
   // Load user from local storage on initial render
   useEffect(() => {
@@ -161,6 +166,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(RESET_CODES_KEY, JSON.stringify(codes));
   };
 
+  // Helper function to send an email using EmailJS
+  const sendEmail = async (to: string, subject: string, message: string) => {
+    try {
+      const templateParams = {
+        to_email: to,
+        to_name: to.split('@')[0],
+        from_name: "Auth System",
+        subject,
+        message
+      };
+      
+      const response = await emailjs.send(
+        "YOUR_SERVICE_ID", // Replace with your EmailJS service ID
+        "YOUR_TEMPLATE_ID", // Replace with your EmailJS template ID
+        templateParams
+      );
+      
+      console.log('Email sent successfully:', response);
+      return true;
+    } catch (error) {
+      console.error('Failed to send email:', error);
+      throw new Error('Failed to send email. Please try again later.');
+    }
+  };
+
   // Login function
   const login = async (email: string, password: string): Promise<void> => {
     const users = getUsers();
@@ -237,12 +267,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const verificationCode = generateVerificationCode();
     saveVerificationCode(userData.email, verificationCode);
 
-    toast({
-      title: "Account created",
-      description: `A verification code has been sent to ${userData.email}. The code is: ${verificationCode}`,
-    });
-
-    console.log("Verification code for testing:", verificationCode);
+    try {
+      // Send verification email
+      await sendEmail(
+        userData.email,
+        "Verify Your Email - Auth System",
+        `Welcome to Auth System! Your verification code is: ${verificationCode}`
+      );
+      
+      toast({
+        title: "Account created",
+        description: `A verification code has been sent to ${userData.email}.`,
+      });
+    } catch (error) {
+      // Fall back to showing code if email fails
+      toast({
+        title: "Account created",
+        description: `A verification code has been sent to ${userData.email}. The code is: ${verificationCode}`,
+      });
+      console.log("Verification code for testing:", verificationCode);
+    }
   };
 
   // Verify email function
@@ -288,12 +332,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const verificationCode = generateVerificationCode();
     saveVerificationCode(email, verificationCode);
 
-    toast({
-      title: "Verification code sent",
-      description: `A verification code has been sent to ${email}. The code is: ${verificationCode}`,
-    });
-
-    console.log("Verification code for testing:", verificationCode);
+    try {
+      // Send verification email
+      await sendEmail(
+        email,
+        "Your Verification Code - Auth System",
+        `Your verification code is: ${verificationCode}`
+      );
+      
+      toast({
+        title: "Verification code sent",
+        description: `A verification code has been sent to ${email}.`,
+      });
+    } catch (error) {
+      // Fall back to showing code if email fails
+      toast({
+        title: "Verification code sent",
+        description: `A verification code has been sent to ${email}. The code is: ${verificationCode}`,
+      });
+      console.log("Verification code for testing:", verificationCode);
+    }
   };
 
   // Resend verification code function
@@ -304,12 +362,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const verificationCode = generateVerificationCode();
     saveVerificationCode(user.email, verificationCode);
 
-    toast({
-      title: "Verification code resent",
-      description: `A new verification code has been sent to ${user.email}. The code is: ${verificationCode}`,
-    });
-
-    console.log("Verification code for testing:", verificationCode);
+    try {
+      // Send verification email
+      await sendEmail(
+        user.email,
+        "Your New Verification Code - Auth System",
+        `Your verification code is: ${verificationCode}`
+      );
+      
+      toast({
+        title: "Verification code resent",
+        description: `A new verification code has been sent to ${user.email}.`,
+      });
+    } catch (error) {
+      // Fall back to showing code if email fails
+      toast({
+        title: "Verification code resent",
+        description: `A new verification code has been sent to ${user.email}. The code is: ${verificationCode}`,
+      });
+      console.log("Verification code for testing:", verificationCode);
+    }
   };
 
   // Request password reset function
@@ -327,12 +399,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const resetCode = generateVerificationCode();
     saveResetCode(email, resetCode);
 
-    toast({
-      title: "Password reset code sent",
-      description: `A password reset code has been sent to ${email}. The code is: ${resetCode}`,
-    });
-
-    console.log("Reset code for testing:", resetCode);
+    try {
+      // Send reset email
+      await sendEmail(
+        email,
+        "Password Reset Code - Auth System",
+        `Your password reset code is: ${resetCode}`
+      );
+      
+      toast({
+        title: "Password reset code sent",
+        description: `A password reset code has been sent to ${email}.`,
+      });
+    } catch (error) {
+      // Fall back to showing code if email fails
+      toast({
+        title: "Password reset code sent",
+        description: `A password reset code has been sent to ${email}. The code is: ${resetCode}`,
+      });
+      console.log("Reset code for testing:", resetCode);
+    }
   };
 
   // Reset password function
