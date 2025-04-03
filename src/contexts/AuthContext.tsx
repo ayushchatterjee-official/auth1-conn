@@ -14,6 +14,11 @@ export interface User {
   isVerified: boolean;
 }
 
+// Extended user interface that includes password
+interface UserWithPassword extends User {
+  password: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -48,6 +53,7 @@ const RESET_CODES_KEY = "auth_site_reset_codes";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Fix the component definition to be a proper function component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,13 +84,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Helper function to get all users
-  const getUsers = (): Record<string, User> => {
+  const getUsers = (): Record<string, UserWithPassword> => {
     const users = localStorage.getItem(USERS_STORAGE_KEY);
     return users ? JSON.parse(users) : {};
   };
 
   // Helper function to save users
-  const saveUsers = (users: Record<string, User>) => {
+  const saveUsers = (users: Record<string, UserWithPassword>) => {
     localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
   };
 
@@ -210,7 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // Create a new user
-    const newUser: User & { password: string } = {
+    const newUser: UserWithPassword = {
       id: crypto.randomUUID(),
       email: userData.email,
       username: userData.username,
